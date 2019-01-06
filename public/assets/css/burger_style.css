@@ -113,9 +113,10 @@ a#logo.brand-logo{
 }
 
 img{
-    height: 200px;
-    filter: brightness(0) invert(1); 
+    height: 250px;
+    /* filter: brightness(0) invert(1);  */
     margin-right:-20px; 
+    transform: translateY(-50px);
 }
 
 #img2{
@@ -127,6 +128,9 @@ img{
     filter: FlipH;
     -ms-filter: "FlipH";
     margin-left: 370px;
+    transform: translateY(-50px);
+    height: 250px;
+
 }
 
 .invisible-container{
