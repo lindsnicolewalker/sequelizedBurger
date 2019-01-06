@@ -1,13 +1,19 @@
-# Burger
+# Burger (Sequelized)
 
-Check it out [here](https://secret-beach-37555.herokuapp.com/)  
+Check it out [here](https://hidden-hollows-71541.herokuapp.com/)  
 ![Alt Text](https://media.giphy.com/media/4ZaY2DxKxUDRILkOKr/giphy.gif)
+
+A Node, Express, Handlebars, and MySQL burger app that lets users input the names of burgers they'd like to eat... and then devour them!
+
+This app is a remake of the original Burger repo found [here](https://github.com/lindsnicolewalker/sequelizedBurger). The key difference is that is uses the Sequelize ORM rather than raw MySQL queries in a homemade ORM. And, using Sequelize, the app is now relational, tracking which users ate which burger.
+
+Please try out the deployed app in Heroku, found [here](https://hidden-hollows-71541.herokuapp.com/).
 
 
 ## Description
 
-Burger! is a restaurant app that lets users input the names of burgers they'd like to eat.
-Whenever a user submits a burger's name, my app will display the burger on the designated section of the page -- waiting to be devoured.
+Burger! is a restaurant app that follows the Model-View-Controller (MVC), an architectural pattern, and lets users input the names of burgers they'd like to eat.
+Whenever a user submits a burger's name, my app will display the burger on the designated section of the page -- waiting to be devoured!
 Each burger in the waiting area also has a Devour! button. When the user clicks it, the burger will move to the appropriate side of the page, waiting to be made, next to a Make! button.
 My app will store every burger in a database, whether devoured or not.
 
@@ -17,7 +23,7 @@ My app will store every burger in a database, whether devoured or not.
 
 ## Technology
 
-MySQL, Node, Express, Handlebars and a homemade ORM 
+MySQL, Node, Express, Handlebars and a MySQL ORM, MVC architecture
 
 # Code
 
@@ -38,66 +44,58 @@ MySQL, Node, Express, Handlebars and a homemade ORM
       });
 	}
 
-## Homemade ORM
+## Models/index.js
+		'use strict';
 
-		var connection = require("../config/connection.js");
+		const fs = require('fs');
+		const path = require('path');
+		const Sequelize = require('sequelize');
+		const basename = path.basename(__filename);
+		const env = process.env.NODE_ENV || 'development';
+		const config = require(__dirname + '/../config/config.json')[env];
+		const db = {};
 
-		var orm = {
-		all: function(tableInput, cb) {
-			var queryString = "SELECT * FROM " + tableInput + ";";
-			connection.query(queryString, function(err, result) {
-			if (err) {
-				throw err;
-			}
-			cb(result);
-			});
-		},
-		create: function(table, cols, vals, cb) {
-			var queryString = "INSERT INTO " + table;
-
-			queryString += " (";
-			queryString += cols.toString();
-			queryString += ") ";
-			queryString += "VALUES (";
-			queryString += printQuestionMarks(vals.length);
-			queryString += ") ";
-
-			console.log(queryString);
-
-			connection.query(queryString, vals, function(err, result) {
-			if (err) {
-				throw err;
-			}
-
-			cb(result);
-			});
-		},
-		update: function(table, objColVals, condition, cb) {
-			var queryString = "UPDATE " + table;
-
-			queryString += " SET ";
-			queryString += objToSql(objColVals);
-			queryString += " WHERE ";
-			queryString += condition;
-
-			console.log(queryString);
-			connection.query(queryString, function(err, result) {
-			if (err) {
-				throw err;
-			}
-
-			cb(result);
-			});
+		let sequelize;
+		if (config.use_env_variable) {
+		sequelize = new Sequelize(process.env[config.use_env_variable], config);
+		} else {
+		sequelize = new Sequelize(config.database, config.username, config.password, config);
 		}
-		};
 
-		module.exports = orm;
+		fs
+		.readdirSync(__dirname)
+		.filter(file => {
+			return (file.indexOf('.') !== 0) && (file !== basename) && (file.slice(-3) === '.js');
+		})
+		.forEach(file => {
+			const model = sequelize['import'](path.join(__dirname, file));
+			db[model.name] = model;
+		});
+
+		Object.keys(db).forEach(modelName => {
+		if (db[modelName].associate) {
+			db[modelName].associate(db);
+		}
+		});
+
+		db.sequelize = sequelize;
+		db.Sequelize = Sequelize;
+
+		module.exports = db;
+
 
 ## Controllers
 
+		var express = require("express");
+
 		var router = express.Router();
+
+		// Import the model (burger.js) to use its database functions.
+		var burger = require("../models/burger.js");
+		var db = require("../models");
+		// Create all our routes and set up logic within those routes where required.
 		router.get("/", function(req, res) {
-		burger.all(function(data) {
+		db.Burger.findAll().then(function(data) {
 			var hbsObject = {
 			burgers: data
 			};
@@ -107,22 +105,23 @@ MySQL, Node, Express, Handlebars and a homemade ORM
 		});
 
 		router.post("/api/burger", function(req, res) {
-		burger.create([
-			"burger_name", "devoured"
-			], [
-			req.body.burger_name, req.body.devoured
-			], function(result) {
+		db.Burger.create({
+		burger_name: req.body.burger_name
+		}).then(function(result) {
 			res.json({ id: result.insertId });
 		});
 		});
 
 		router.put("/api/burger/:id", function(req, res) {
-			var condition = "id = " + req.params.id;
+		var condition = "id = " + req.params.id;
 
-		burger.update({
+		console.log("condition", condition);
+
+		db.Burger.update({
 			devoured: req.body.devoured
-			}, condition, function(result) {
+		}, {where: {id:req.params.id}}).then(function(result) {
 			if (result.changedRows == 0) {
+			// If no rows were changed, then the ID must not exist, so 404
 			return res.status(404).end();
 			} else {
 			res.status(200).end();
@@ -133,56 +132,22 @@ MySQL, Node, Express, Handlebars and a homemade ORM
 		// Export routes for server.js to use.
 		module.exports = router;
 
-## Javascript
-
-		var burger = {
-		all: function(cb) {
-			orm.all("burger", function(res) {
-			cb(res);
-			});
-		},
-		create: function(cols, vals, cb) {
-			orm.create("burger", cols, vals, function(res) {
-			cb(res);
-			});
-		},
-		update: function(objColVals, condition, cb) {
-			orm.update("burger", objColVals, condition, function(res) {
-			cb(res);
-			});
-		}
-
 ## Server.js
 
-		var express = require("express");
-		var app = express();
-
-		var PORT = process.env.PORT || 8080;
-
-		app.use(express.static("public"));
-
-		app.use(express.urlencoded({ extended: true }));
-		app.use(express.json());
-
-		var exphbs = require("express-handlebars");
-
-		app.engine("handlebars", exphbs({ defaultLayout: "main" }));
-		app.set("view engine", "handlebars");
-
-		var routes = require("./controllers/burgers_Controller.js");
-
-		app.use(routes);
-
+		db.sequelize.sync().then(function(){
+		// Start our server so that it can begin listening to client requests.
 		app.listen(PORT, function() {
+		// Log (server-side) when our server has started
 		console.log("Server listening on: http://localhost:" + PORT);
 		});
+
 
 ## Installation
 
 To install the application follow the instructions below in your terminal:  
 
-	git clone git@github.com:lindsnicolewalker/burger.git
-	cd burger
+	git clone git@github.com:lindsnicolewalker/sequelizedBurger.git
+	cd sequelizedBurger
 	npm install
 	
 ## Using App Locally
