@@ -137,3 +137,27 @@ img{
     background-color: transparent;
    
 }
+
+
+@media only screen and (max-width:480px) {
+    div.nav-wrapper.black.accent-2.z-depth-5{
+        width:580px; 
+    }
+    h1.z-depth-5 {
+        transform: translateX(-170px);
+    }
+    img{
+        display:none;
+    }
+    .container .row{
+        margin-right: -18rem;
+        margin-left: 0rem; 
+    }
+    footer.page-footer {
+        width:580px;
+    }
+    body {
+        font-size:2.5rem;
+        
+    }
+}
