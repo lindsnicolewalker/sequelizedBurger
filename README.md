@@ -4,7 +4,7 @@
 
 A Node, Express, Handlebars, and MySQL burger app that lets users input the names of burgers they'd like to eat... and then devour them!
 
-This app is a remake of the original Burger repo found [here](https://github.com/lindsnicolewalker/burger). The key difference is that is uses the Sequelize ORM rather than raw MySQL queries in a homemade ORM. And, using Sequelize, the app is now relational, tracking which users ate which burger.
+This app is a remake of the original Burger repo found [here](https://github.com/lindsnicolewalker/burger). The key difference is that is uses the Sequelize ORM rather than raw MySQL queries in a homemade ORM. 
 
 Please try out the deployed app in Heroku, found [here](https://hidden-hollows-71541.herokuapp.com/).
 
